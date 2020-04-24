@@ -398,6 +398,42 @@ def test_check_css_globally_unique_ignored_dir(caplog):
     assert caplog.text == ""
 
 
+def test_check_unique_basename_paths_same_path(caplog):
+    # Precondition: There are files with conflicting basename paths.
+    assert os.path.exists(os.path.join(_dummy_repo, 'tests', 'dir1', 'a.html'))
+    assert os.path.exists(os.path.join(_dummy_repo, 'tests', 'dir1', 'a.xhtml'))
+
+    with _mock_lint("check_path") as mocked_check_path:
+        with _mock_lint("check_file_contents") as mocked_check_file_contents:
+            rv = lint(_dummy_repo, ["tests/dir1/a.html", "tests/dir1/a.xhtml"], "normal")
+            assert rv == 1
+    assert "DUPLICATE-BASENAME-PATH" in caplog.text
+
+
+def test_check_unique_basename_paths_different_name(caplog):
+    # Precondition: There are two files in the same directory with different names.
+    assert os.path.exists(os.path.join(_dummy_repo, 'tests', 'dir1', 'a.html'))
+    assert os.path.exists(os.path.join(_dummy_repo, 'tests', 'dir1', 'b.html'))
+
+    with _mock_lint("check_path") as mocked_check_path:
+        with _mock_lint("check_file_contents") as mocked_check_file_contents:
+            rv = lint(_dummy_repo, ["tests/dir1/a.html", "tests/dir1/b.html"], "normal")
+            assert rv == 0
+    assert caplog.text == ""
+
+
+def test_check_unique_basename_paths_different_dir(caplog):
+    # Precondition: There are two files in different directories with the same basename.
+    assert os.path.exists(os.path.join(_dummy_repo, 'tests', 'dir1', 'a.html'))
+    assert os.path.exists(os.path.join(_dummy_repo, 'tests', 'dir2', 'a.xhtml'))
+
+    with _mock_lint("check_path") as mocked_check_path:
+        with _mock_lint("check_file_contents") as mocked_check_file_contents:
+            rv = lint(_dummy_repo, ["tests/dir1/a.html", "tests/dir2/a.xhtml"], "normal")
+            assert rv == 0
+    assert caplog.text == ""
+
+
 def test_ignore_glob(caplog):
     # Lint two files in the ref/ directory, and pass in ignore_glob to omit one
     # of them.

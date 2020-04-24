@@ -345,7 +345,7 @@ def check_unique_basename_paths(repo_root, paths):
         if len(v) > 1:
             context = (', '.join(v))
             errors.append(rules.DuplicateBasenamePath.error(k, context))
-    return []
+    return errors
 
 
 def parse_whitelist(f):
