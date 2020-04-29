@@ -6,6 +6,17 @@
 // to construct requests that were out-of-sync with the state of the ReadableStream. They could then be used to call
 // internal operations, resulting in asserts or bad behaviour. This file contains regression tests for the change.
 
+function getRealByteStreamController() {
+  let controller;
+  new ReadableStream({
+    start(c) {
+      controller = c;
+    },
+    type: 'bytes'
+  });
+  return controller;
+}
+
 // Create an object pretending to have prototype |prototype|, of type |type|. |type| is one of "undefined", "null",
 // "fake", or "real". "real" will call the realObjectCreator function to get a real instance of the object.
 function createDummyObject(prototype, type, realObjectCreator) {
