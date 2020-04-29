@@ -227,18 +227,14 @@ promise_test(() => {
 promise_test(() => {
 
   let pullCount = 0;
-  const startPromise = Promise.resolve();
 
   new ReadableStream({
-    start() {
-      return startPromise;
-    },
     pull() {
       pullCount++;
     }
   });
 
-  return startPromise.then(() => {
+  return flushAsyncEvents().then(() => {
     assert_equals(pullCount, 1, 'pull should be called once start finishes');
     return delay(10);
   }).then(() => {
@@ -250,12 +246,8 @@ promise_test(() => {
 promise_test(() => {
 
   let pullCount = 0;
-  const startPromise = Promise.resolve();
 
   const rs = new ReadableStream({
-    start() {
-      return startPromise;
-    },
     pull(c) {
       // Don't enqueue immediately after start. We want the stream to be empty when we call .read() on it.
       if (pullCount > 0) {
@@ -265,7 +257,7 @@ promise_test(() => {
     }
   });
 
-  return startPromise.then(() => {
+  return flushAsyncEvents().then(() => {
     assert_equals(pullCount, 1, 'pull should be called once start finishes');
   }).then(() => {
     const reader = rs.getReader();
@@ -282,12 +274,10 @@ promise_test(() => {
 promise_test(() => {
 
   let pullCount = 0;
-  const startPromise = Promise.resolve();
 
   const rs = new ReadableStream({
     start(c) {
       c.enqueue('a');
-      return startPromise;
     },
     pull() {
       pullCount++;
@@ -297,7 +287,7 @@ promise_test(() => {
   const read = rs.getReader().read();
   assert_equals(pullCount, 0, 'calling read() should not cause pull to be called yet');
 
-  return startPromise.then(() => {
+  return flushAsyncEvents().then(() => {
     assert_equals(pullCount, 1, 'pull should be called once start finishes');
     return read;
   }).then(r => {
@@ -318,14 +308,13 @@ promise_test(() => {
   const rs = new ReadableStream({
     start(c) {
       c.enqueue('a');
-      return startPromise;
     },
     pull() {
       pullCount++;
     }
   });
 
-  return startPromise.then(() => {
+  return flushAsyncEvents().then(() => {
     assert_equals(pullCount, 0, 'pull should not be called once start finishes, since the queue is full');
 
     const read = rs.getReader().read();
@@ -344,12 +333,10 @@ promise_test(() => {
 
   let pullCount = 0;
   let controller;
-  const startPromise = Promise.resolve();
 
   const rs = new ReadableStream({
     start(c) {
       controller = c;
-      return startPromise;
     },
     pull() {
       ++pullCount;
@@ -357,7 +344,7 @@ promise_test(() => {
   });
 
   const reader = rs.getReader();
-  return startPromise.then(() => {
+  return flushAsyncEvents().then(() => {
     assert_equals(pullCount, 1, 'pull should have been called once by the time the stream starts');
 
     controller.enqueue('a');
@@ -377,12 +364,10 @@ promise_test(() => {
 
   let pullCount = 0;
   let controller;
-  const startPromise = Promise.resolve();
 
   const rs = new ReadableStream({
     start(c) {
       controller = c;
-      return startPromise;
     },
     pull() {
       ++pullCount;
@@ -391,7 +376,7 @@ promise_test(() => {
 
   const reader = rs.getReader();
 
-  return startPromise.then(() => {
+  return flushAsyncEvents().then(() => {
     assert_equals(pullCount, 1, 'pull should have been called once by the time the stream starts');
 
     controller.enqueue('a');
@@ -415,12 +400,8 @@ promise_test(() => {
   let resolve;
   let returnedPromise;
   let timesCalled = 0;
-  const startPromise = Promise.resolve();
 
   const rs = new ReadableStream({
-    start() {
-      return startPromise;
-    },
     pull(c) {
       c.enqueue(++timesCalled);
       returnedPromise = new Promise(r => resolve = r);
@@ -429,9 +410,8 @@ promise_test(() => {
   });
   const reader = rs.getReader();
 
-  return startPromise.then(() => {
-    return reader.read();
-  }).then(result1 => {
+  return reader.read()
+  .then(result1 => {
     assert_equals(timesCalled, 1,
       'pull should have been called once after start, but not yet have been called a second time');
     assert_object_equals(result1, { value: 1, done: false }, 'read() should fulfill with the enqueued value');
@@ -452,7 +432,6 @@ promise_test(() => {
 promise_test(() => {
 
   let timesCalled = 0;
-  const startPromise = Promise.resolve();
 
   const rs = new ReadableStream(
     {
@@ -460,7 +439,6 @@ promise_test(() => {
         c.enqueue('a');
         c.enqueue('b');
         c.enqueue('c');
-        return startPromise;
       },
       pull() {
         ++timesCalled;
@@ -475,7 +453,7 @@ promise_test(() => {
   );
   const reader = rs.getReader();
 
-  return startPromise.then(() => {
+  return flushAsyncEvents().then(() => {
     return reader.read();
   }).then(result1 => {
     assert_object_equals(result1, { value: 'a', done: false }, 'first chunk should be as expected');
